@@ -94,21 +94,6 @@ World saves to the repo automatically on stop.
 | `TAILSCALE_AUTH_KEY` | Tailscale admin console → Auth keys |
 | `GITHUB_TOKEN` | Auto-provided by Actions |
 
-### Make yourself OP
-
-While the server is running, go to the Actions run log — there's a live console. Type:
-
-```
-op YourUsername
-```
-
-### Whitelist
-
-```
-whitelist on
-whitelist add PlayerName
-```
-
 ### Change RAM
 
 Edit `-Xmx6G` in `.github/workflows/start-server.yml` under the `start server` step.
