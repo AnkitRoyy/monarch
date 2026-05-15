@@ -1,21 +1,21 @@
-name: 🎮 Start Minecraft Server
+name: server/start
 
 on:
   workflow_dispatch:
     inputs:
       message:
-        description: "Optional message shown in server MOTD"
+        description: "MOTD suffix (optional)"
         required: false
         default: ""
 
 jobs:
-  check-running:
-    name: 🔍 Check if already running
+  guard:
+    name: check
     runs-on: ubuntu-latest
     outputs:
-      already_running: ${{ steps.check.outputs.running }}
+      running: ${{ steps.check.outputs.running }}
     steps:
-      - name: Check for active server runs
+      - name: already running?
         id: check
         uses: actions/github-script@v7
         with:
@@ -29,36 +29,35 @@ jobs:
             const others = runs.data.workflow_runs.filter(r => r.id !== context.runId);
             if (others.length > 0) {
               core.setOutput('running', 'true');
-              core.warning(`Server already running → ${others[0].html_url}`);
+              core.warning(`already running -> ${others[0].html_url}`);
             } else {
               core.setOutput('running', 'false');
-              console.log('No active server — starting now...');
             }
 
-  start-server:
-    name: 🚀 Launch Server
+  start:
+    name: launch
     runs-on: ubuntu-latest
-    needs: check-running
-    if: needs.check-running.outputs.already_running == 'false'
+    needs: guard
+    if: needs.guard.outputs.running == 'false'
     timeout-minutes: 350
 
     permissions:
       contents: write
 
     steps:
-      - name: 📂 Checkout
+      - name: checkout
         uses: actions/checkout@v4
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
           fetch-depth: 0
 
-      - name: ☕ Java 21
+      - name: java 21
         uses: actions/setup-java@v4
         with:
           distribution: temurin
           java-version: 21
 
-      - name: 💾 Restore jar cache
+      - name: restore jar cache
         uses: actions/cache@v4
         id: jar-cache
         with:
@@ -71,29 +70,26 @@ jobs:
           key: mc-jars-v1-${{ hashFiles('scripts/versions.txt') }}
           restore-keys: mc-jars-v1-
 
-      - name: 📥 Download server & plugins
+      - name: download server & plugins
         if: steps.jar-cache.outputs.cache-hit != 'true'
         run: bash scripts/download.sh
 
-      - name: ⚙️ Apply config files
+      - name: apply config
         run: bash scripts/apply-config.sh "${{ github.event.inputs.message }}"
 
-      - name: ✅ Accept EULA
+      - name: accept eula
         run: echo "eula=true" > eula.txt
 
-      # ── World Restore ─────────────────────────────────────────
-      - name: 🌍 Restore world from repo
+      - name: restore world
         run: |
           if [ -f world-data/world.tar.gz ]; then
-            echo "Found saved world — restoring..."
+            echo "restoring saved world..."
             tar -xzf world-data/world.tar.gz
-            echo "✅ World restored!"
           else
-            echo "No saved world found — fresh world will be generated."
+            echo "no saved world found — fresh generation."
           fi
 
-      # ── Tailscale ─────────────────────────────────────────────
-      - name: 🔗 Install & connect Tailscale
+      - name: connect tailscale
         run: |
           curl -fsSL https://tailscale.com/install.sh | sh
           sudo tailscale up \
@@ -101,39 +97,35 @@ jobs:
             --hostname="monarch-mc" \
             --accept-routes
 
-      - name: 📋 Print connection info
+      - name: connection info
         run: |
           TS_IP=$(tailscale ip -4)
           echo ""
-          echo "╔══════════════════════════════════════════════════════════════╗"
-          echo "║              🎮  MONARCH MC  —  SERVER IS LIVE  🎮          ║"
-          echo "╠══════════════════════════════════════════════════════════════╣"
-          echo "║                                                              ║"
-          echo "║  Make sure you're connected to Tailscale before joining!    ║"
-          echo "║                                                              ║"
-          echo "║  Tailscale IP  ➜  ${TS_IP}                        ║"
-          echo "║                                                              ║"
-          echo "║  Java Edition   ➜  ${TS_IP}:25565               ║"
-          echo "║  Bedrock / PE   ➜  ${TS_IP}:19132               ║"
-          echo "║                                                              ║"
-          echo "║  Java versions : 1.8 → 1.21.4                             ║"
-          echo "║  Bedrock / PE  : any version                               ║"
-          echo "║                                                              ║"
-          echo "║  Invite friends: https://login.tailscale.com/admin/users   ║"
-          echo "╚══════════════════════════════════════════════════════════════╝"
+          echo "  ┌─────────────────────────────────────────┐"
+          echo "  │           monarch mc  —  live            │"
+          echo "  ├─────────────────────────────────────────┤"
+          echo "  │                                         │"
+          echo "  │  connect via tailscale before joining   │"
+          echo "  │                                         │"
+          echo "  │  ip      ->  ${TS_IP}              │"
+          echo "  │  java    ->  ${TS_IP}:25565        │"
+          echo "  │  bedrock ->  ${TS_IP}:19132        │"
+          echo "  │                                         │"
+          echo "  │  java    1.8 -> 1.21.4                 │"
+          echo "  │  bedrock any version                    │"
+          echo "  │                                         │"
+          echo "  └─────────────────────────────────────────┘"
 
-      # ── First-run init ────────────────────────────────────────
-      - name: ⚙️ First-run server init (generates plugin configs)
+      - name: first-run init
         run: |
           timeout 60 java -Xms512M -Xmx1G -jar server.jar --nogui 2>&1 \
             | grep -E "(Done|Enabling|Geyser|Floodgate|Via|ERROR|WARN)" || true
           sleep 3
 
-      - name: 🦎 Configure GeyserMC
+      - name: configure geyser
         run: bash scripts/configure-geyser.sh
 
-      # ── Live server ───────────────────────────────────────────
-      - name: 🟢 Start Minecraft server (runs until stopped)
+      - name: start server
         run: |
           java \
             -Xms2G -Xmx6G \
@@ -157,42 +149,39 @@ jobs:
             -XX:MaxTenuringThreshold=1 \
             -jar server.jar --nogui
 
-      # ── World Save → push to repo ─────────────────────────────
-      - name: 💾 Pack world files
+      - name: pack world
         if: always()
         run: |
           mkdir -p world-data
           tar -czf world-data/world.tar.gz \
-            world/ \
-            world_nether/ \
-            world_the_end/ \
-            2>/dev/null && echo "✅ World packed!" || echo "⚠️ No world folder found."
+            world/ world_nether/ world_the_end/ \
+            2>/dev/null && echo "world packed." || echo "no world folder found."
 
-      - name: 🔧 Configure git
+      - name: configure git
         if: always()
         run: |
-          git config user.name  "Monarch Server Bot"
+          git config user.name  "monarch-bot"
           git config user.email "mc-bot@github-actions"
 
-      - name: 📤 Commit & push world to repo
+      - name: push world to repo
         if: always()
         run: |
           git add world-data/world.tar.gz
           if git diff --staged --quiet; then
-            echo "No world changes to commit."
+            echo "no world changes."
           else
-            TIMESTAMP=$(date -u '+%Y-%m-%d %H:%M UTC')
-            git commit -m "🌍 World save — $TIMESTAMP"
+            TIMESTAMP=$(TZ='Asia/Kolkata' date '+%H:%M')
+            git commit -m "world saved at $TIMESTAMP"
             git pull --rebase origin ${{ github.ref_name }}
             git push origin HEAD:${{ github.ref_name }}
-            echo "✅ World pushed to repo!"
+            echo "world pushed."
           fi
 
-  already-running:
-    name: ⚠️ Server Already Running
+  blocked:
+    name: blocked
     runs-on: ubuntu-latest
-    needs: check-running
-    if: needs.check-running.outputs.already_running == 'true'
+    needs: guard
+    if: needs.guard.outputs.running == 'true'
     steps:
       - uses: actions/github-script@v7
         with:
@@ -205,4 +194,4 @@ jobs:
             });
             const active = runs.data.workflow_runs.filter(r => r.id !== context.runId);
             if (active.length > 0)
-              core.warning(`Server already running! Live logs → ${active[0].html_url}`);
+              core.warning(`server already running -> ${active[0].html_url}`);
