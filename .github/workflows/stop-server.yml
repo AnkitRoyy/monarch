@@ -1,0 +1,40 @@
+name: 🛑 Stop Minecraft Server
+
+on:
+  workflow_dispatch:
+
+jobs:
+  stop-server:
+    name: 🛑 Cancel active server run
+    runs-on: ubuntu-latest
+    permissions:
+      actions: write
+    steps:
+      - name: Find and cancel active server workflow
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const runs = await github.rest.actions.listWorkflowRuns({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              workflow_id: 'start-server.yml',
+              status: 'in_progress',
+            });
+
+            const active = runs.data.workflow_runs.filter(r => r.id !== context.runId);
+
+            if (active.length === 0) {
+              console.log('ℹ️ No active server found. Nothing to stop.');
+              return;
+            }
+
+            for (const run of active) {
+              console.log(`🛑 Cancelling run #${run.id}...`);
+              await github.rest.actions.cancelWorkflowRun({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                run_id: run.id,
+              });
+              console.log(`✅ Run #${run.id} cancelled — world is being saved to repo.`);
+            }

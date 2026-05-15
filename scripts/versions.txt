@@ -1,0 +1,6 @@
+# Version tracking — update any value here to bust the jar cache and re-download
+PAPER_MC_VERSION=1.21.4
+GEYSER_VERSION=latest
+FLOODGATE_VERSION=latest
+VIAVERSION_VERSION=latest
+VIABACKWARDS_VERSION=latest

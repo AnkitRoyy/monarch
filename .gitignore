@@ -1,0 +1,24 @@
+# Server runtime files — never commit these
+server.jar
+eula.txt
+world/
+world_nether/
+world_the_end/
+logs/
+crash-reports/
+plugins/*.jar
+plugins/Geyser-Spigot/
+plugins/floodgate/
+plugins/ViaVersion/
+plugins/ViaBackwards/
+cache/
+usercache.json
+whitelist.json
+ops.json
+banned-ips.json
+banned-players.json
+*.log
+.DS_Store
+digest.txt
+
+# world-data/ is intentionally NOT ignored — it's committed by the bot

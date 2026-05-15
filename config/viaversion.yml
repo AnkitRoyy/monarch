@@ -1,0 +1,15 @@
+# ViaVersion Configuration
+# Allows clients from older Minecraft versions to join the 1.21.4 server
+
+block-protocols: []
+suppress-metadata-errors: false
+no-delay-shield-blocking: false
+force-1-9-combat: false
+send-supported-versions: true
+
+bossbar-options:
+  max-health: 100.0
+
+auto-team: true
+item-sanity-checks: true
+chunk-border-fix: true
