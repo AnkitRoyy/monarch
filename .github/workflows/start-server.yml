@@ -128,7 +128,7 @@ jobs:
       - name: start server
         run: |
           sudo apt-get install -y screen -q
-          screen -dmS mc java \
+          screen -dmS mc bash -c "java \
             -Xms2G -Xmx6G \
             -XX:+UseG1GC \
             -XX:+ParallelRefProcEnabled \
@@ -148,8 +148,9 @@ jobs:
             -XX:SurvivorRatio=32 \
             -XX:+PerfDisableSharedMem \
             -XX:MaxTenuringThreshold=1 \
-            -jar server.jar --nogui
-          trap "screen -S mc -p 0 -X stuff 'save-all\n'; while screen -S mc -X hardcopy /tmp/mc.log && ! grep -q 'Saved the game' /tmp/mc.log; do sleep 1; done; screen -S mc -p 0 -X stuff 'stop\n'; while screen -list | grep -q mc; do sleep 2; done" SIGTERM SIGINT
+            -jar server.jar --nogui 2>&1 | tee /tmp/mc.log"
+          trap "screen -S mc -p 0 -X stuff 'save-all\n'; while ! grep -q 'Saved the game' /tmp/mc.log; do sleep 1; done; screen -S mc -p 0 -X stuff 'stop\n'; while screen -list | grep -q mc; do sleep 2; done" SIGTERM SIGINT
+          tail -f /tmp/mc.log &
           while screen -list | grep -q mc; do sleep 5; done
 
       - name: pack world
