@@ -127,7 +127,8 @@ jobs:
 
       - name: start server
         run: |
-          java \
+          sudo apt-get install -y screen -q
+          screen -dmS mc java \
             -Xms2G -Xmx6G \
             -XX:+UseG1GC \
             -XX:+ParallelRefProcEnabled \
@@ -148,6 +149,8 @@ jobs:
             -XX:+PerfDisableSharedMem \
             -XX:MaxTenuringThreshold=1 \
             -jar server.jar --nogui
+          trap "screen -S mc -p 0 -X stuff 'save-all\n'; while screen -S mc -X hardcopy /tmp/mc.log && ! grep -q 'Saved the game' /tmp/mc.log; do sleep 1; done; screen -S mc -p 0 -X stuff 'stop\n'; while screen -list | grep -q mc; do sleep 2; done" SIGTERM SIGINT
+          while screen -list | grep -q mc; do sleep 5; done
 
       - name: pack world
         if: always()
@@ -176,6 +179,10 @@ jobs:
             git push origin HEAD:${{ github.ref_name }}
             echo "world pushed."
           fi
+
+      - name: disconnect tailscale
+        if: always()
+        run: sudo tailscale logout
 
 
   blocked:

@@ -31,6 +31,6 @@ ticks-per:
   water-underground-creature-spawns: 1
   axolotl-spawns: 1
   ambient-spawns: 1
-  autosave: 6000
+  autosave: 1200
 
 aliases: now-in-commands.yml
