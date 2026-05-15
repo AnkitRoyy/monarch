@@ -177,6 +177,10 @@ jobs:
             echo "world pushed."
           fi
 
+      - name: disconnect tailscale
+        if: always()
+        run: sudo tailscale logout
+
   blocked:
     name: blocked
     runs-on: ubuntu-latest
