@@ -95,7 +95,8 @@ jobs:
           sudo tailscale up \
             --authkey="${{ secrets.TAILSCALE_AUTH_KEY }}" \
             --hostname="monarch-mc" \
-            --accept-routes
+            --accept-routes \
+            --ephemeral
 
       - name: connection info
         run: |
