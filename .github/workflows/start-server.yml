@@ -160,8 +160,8 @@ jobs:
       - name: configure git
         if: always()
         run: |
-          git config user.name  "monarch-bot"
-          git config user.email "mc-bot@github-actions"
+          git config user.name  "AnkitRoyy"
+          git config user.email "ankitkumarroy2007@gmail.com"
 
       - name: push world to repo
         if: always()
@@ -177,9 +177,6 @@ jobs:
             echo "world pushed."
           fi
 
-      - name: disconnect tailscale
-        if: always()
-        run: sudo tailscale logout
 
   blocked:
     name: blocked
