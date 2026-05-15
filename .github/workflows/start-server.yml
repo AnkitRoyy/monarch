@@ -127,6 +127,7 @@ jobs:
 
       - name: start server
         run: |
+          mkfifo mc_stdin
           java \
             -Xms2G -Xmx6G \
             -XX:+UseG1GC \
@@ -147,7 +148,10 @@ jobs:
             -XX:SurvivorRatio=32 \
             -XX:+PerfDisableSharedMem \
             -XX:MaxTenuringThreshold=1 \
-            -jar server.jar --nogui
+            -jar server.jar --nogui < mc_stdin &
+          SERVER_PID=$!
+          trap "echo stop > mc_stdin; wait $SERVER_PID" SIGTERM SIGINT
+          wait $SERVER_PID
 
       - name: pack world
         if: always()
