@@ -5,7 +5,7 @@ settings:
   bungeecord: false
   moved-wrongly-threshold: 0.0625
   moved-too-quickly-multiplier: 10.0
-  timeout-time: 60
+  timeout-time: 120
   restart-on-crash: false
   restart-script: ./start.sh
   netty-threads: 4
